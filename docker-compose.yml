@@ -1,0 +1,7 @@
+version: '3'
+
+services:
+  gtfs-validator:
+    build: .
+    volumes:
+      - ".:/application"
