@@ -17,3 +17,10 @@ from gtfs_validator_api import validate
 validate("tests/sample.zip")
 ```
 
+## Development
+
+```
+docker-compose run gtfs-validator /bin/bash
+
+# then, run example script in container
+```
