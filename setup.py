@@ -20,7 +20,7 @@ with open('gtfs_validator_api.py', 'rb') as f:
 
 setup(
     name="gtfs_validator_api",
-    packages=find_packages(),
+    py_modules=["gtfs_validator_api"],
     version=VERSION,
     # description="A thin wrapper around MobilityData/gtfs-validator",
     # author='Michael Chow',
