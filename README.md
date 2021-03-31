@@ -23,5 +23,7 @@ validate("tests/sample.zip")
 docker-compose run gtfs-validator /bin/bash
 
 # then, run example script in container
+gtfs-validator-api validate tests/sample.zip
+gtfs-validator-api validate --help
 ```
 

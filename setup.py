@@ -31,7 +31,7 @@ setup(
     entry_points={
         'console_scripts': ['gtfs-validator-api=gtfs_validator_api:main'],
     },
-    install_requires=[],
+    install_requires=["argh"],
     python_requires=">=3.6",
     # long_description=README,
     # long_description_content_type="text/markdown",
