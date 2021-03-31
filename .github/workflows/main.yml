@@ -1,8 +1,9 @@
 name: Docker image
 
 on:
-  release:
-    types: [published]
+  # use tags, rather than releases, so we conveniently get
+  # the tag name as github.event.ref
+  tags: ["v*"]
 
 jobs:
   build_push:
