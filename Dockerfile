@@ -1,11 +1,11 @@
-#FROM ghcr.io/mobilitydata/gtfs-validator:v2.0.0
 FROM openjdk:11
 
-RUN wget \
-    https://github.com/MobilityData/gtfs-validator/releases/download/v2.0.0/gtfs-validator-v2.0.0_cli.jar \
-    -O /usr/gtfs-validator.jar
-
 ENV GTFS_VALIDATOR_JAR=/usr/gtfs-validator.jar
+ENV GTFS_VALIDATOR_VERSION=v2.0.0
+
+RUN wget \
+    https://github.com/MobilityData/gtfs-validator/releases/download/${GTFS_VALIDATOR_VERSION}/gtfs-validator-${GTFS_VALIDATOR_VERSION}_cli.jar \
+    -O ${GTFS_VALIDATOR_JAR}
 
 # Install python
 RUN apt-get update -y \
