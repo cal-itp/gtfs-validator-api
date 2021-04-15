@@ -10,7 +10,7 @@ RUN wget \
 # Install python
 RUN apt-get update -y \
     && apt-get install -y python3 python3-pip \
-    && python3 -m pip install argh==0.26.2 gcsfs==0.7.2
+    && python3 -m pip install argh==0.26.2 gcsfs==0.8.0
 
 # Install package
 WORKDIR /application
