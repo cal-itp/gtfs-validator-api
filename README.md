@@ -25,5 +25,12 @@ docker-compose run gtfs-validator /bin/bash
 # then, run example script in container
 gtfs-validator-api validate tests/sample.zip
 gtfs-validator-api validate --help
+gtfs-validator-api validate-gcs-bucket \
+    -v -r \
+    -o validation.json \
+    cal-itp-data-infra \
+    google_default \
+    gs://gtfs-data-test/schedule/2021-03-28T00:00:00+00:00
+
 ```
 

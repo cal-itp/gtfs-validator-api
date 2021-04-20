@@ -1,4 +1,4 @@
-__version__ = "0.0.1"
+__version__ = "0.0.5"
 
 import os
 import json
@@ -20,7 +20,7 @@ except KeyError:
 # API ----
 
 @arg("gtfs_file", help="a zipped gtfs file", type=str)
-def validate(gtfs_file, out_file=None, verbose=False):
+def validate(gtfs_file, out_file=None, verbose=False, feed_name="us-na"):
     if not isinstance(gtfs_file, str):
         raise NotImplementedError("gtfs_file must be a string")
 
@@ -35,7 +35,7 @@ def validate(gtfs_file, out_file=None, verbose=False):
             "-jar", JAR_PATH,
             "--input", gtfs_file,
             "--output_base", tmp_out_dir,
-            "--feed_name", "na-na",
+            "--feed_name", feed_name,
             ], stderr=stderr, stdout=stdout)
 
         report = Path(tmp_out_dir) / "report.json"
@@ -68,7 +68,7 @@ def validate_many(gtfs_files, out_file=None, verbose=False):
 
 def _get_paths_from_status(f, bucket_path):
     from csv import DictReader
-    tmpl_path = "{bucket_path}/{itp_id}/{url_number}/"
+    tmpl_path = "{bucket_path}/{itp_id}_{url_number}/"
 
     rows = list(DictReader(f))
 
@@ -85,6 +85,7 @@ def _get_paths_from_status(f, bucket_path):
 @arg("bucket_paths", nargs="+")
 def validate_gcs_bucket(
         project_id, token, bucket_paths,
+        feed_name="us-na",
         recursive=False, out_file=None, verbose=False
         ):
     """
@@ -92,6 +93,7 @@ def validate_gcs_bucket(
         project_id: name of google cloud project
         token: token argument passed to gcsfs.GCSFileSystem
         bucket_paths: list-like. paths to gcs buckets (e.g. gs://a_bucket/b/c)
+        feed_name: a string of form "{iso_country}-{custom_name}"
         recursive: whether to look for a file named status.csv in bucket, and
                    use that to validate multiple gtfs data sources within.
         out_file: file path for saving json result (may be a bucket)
@@ -129,7 +131,7 @@ def validate_gcs_bucket(
 
             result = {
                 "version": os.environ["GTFS_VALIDATOR_VERSION"],
-                "data": validate(path_zip, verbose=verbose)
+                "data": validate(path_zip, verbose=verbose, feed_name=feed_name)
                 }
 
         results.append(result)
