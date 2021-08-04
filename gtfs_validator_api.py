@@ -3,6 +3,7 @@ __version__ = "0.0.5"
 import os
 import json
 import subprocess
+import warnings
 
 import argh
 from argh import arg
@@ -16,6 +17,21 @@ try:
 except KeyError:
     raise Exception("Must set the environment variable GTFS_VALIDATOR_JAR")
 
+
+# Utility funcs ----
+
+def retry_on_fail(f, max_retries=2):
+    n_retries = 0
+
+    for n_retries in range(max_retries + 1):
+        try:
+            f()
+        except Exception as e:
+            if n_retries < max_retries:
+                n_retries += 1
+                warnings.warn("Function failed, starting retry: %s" % n_retries)
+            else:
+                raise e
 
 # API ----
 
@@ -68,7 +84,7 @@ def validate_many(gtfs_files, out_file=None, verbose=False):
 
 def _get_paths_from_status(f, bucket_path):
     from csv import DictReader
-    tmpl_path = "{bucket_path}/{itp_id}_{url_number}/"
+    tmpl_path = "{bucket_path}/{itp_id}_{url_number}"
 
     rows = list(DictReader(f))
 
@@ -144,7 +160,10 @@ def validate_gcs_bucket(
                 print("Saving to path: %s" % bucket_out)
 
             # fs.pipe expects contents to be byte encoded
-            fs.pipe(bucket_out, json.dumps(result).encode())
+            retry_on_fail(
+                lambda: fs.pipe(bucket_out, json.dumps(result).encode()),
+                2
+            )
 
     # if not saving to disk, return results
     if out_file is None:
