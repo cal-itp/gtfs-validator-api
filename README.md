@@ -33,4 +33,3 @@ gtfs-validator-api validate-gcs-bucket \
     gs://gtfs-data-test/schedule/2021-03-28T00:00:00+00:00
 
 ```
-

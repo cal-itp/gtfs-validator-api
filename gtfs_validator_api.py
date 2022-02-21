@@ -1,16 +1,14 @@
 __version__ = "0.0.6"
 
-import os
 import json
+import os
 import subprocess
 import warnings
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import argh
 from argh import arg
-
-from tempfile import TemporaryDirectory
-from pathlib import Path
-
 
 try:
     JAR_PATH = os.environ.get("GTFS_VALIDATOR_JAR")
@@ -20,9 +18,8 @@ except KeyError:
 
 # Utility funcs ----
 
-def retry_on_fail(f, max_retries=2):
-    n_retries = 0
 
+def retry_on_fail(f, max_retries=2):
     for n_retries in range(max_retries + 1):
         try:
             f()
@@ -33,7 +30,9 @@ def retry_on_fail(f, max_retries=2):
             else:
                 raise e
 
+
 # API ----
+
 
 @arg("gtfs_file", help="a zipped gtfs file", type=str)
 def validate(gtfs_file, out_file=None, verbose=False, feed_name="us-na"):
@@ -46,21 +45,29 @@ def validate(gtfs_file, out_file=None, verbose=False, feed_name="us-na"):
 
     with TemporaryDirectory() as tmp_out_dir:
 
-        subprocess.check_call([
-            "java",
-            "-jar", JAR_PATH,
-            "--input", gtfs_file,
-            "--output_base", tmp_out_dir,
-            "--feed_name", feed_name,
-            ], stderr=stderr, stdout=stdout)
+        subprocess.check_call(
+            [
+                "java",
+                "-jar",
+                JAR_PATH,
+                "--input",
+                gtfs_file,
+                "--output_base",
+                tmp_out_dir,
+                "--feed_name",
+                feed_name,
+            ],
+            stderr=stderr,
+            stdout=stdout,
+        )
 
         report = Path(tmp_out_dir) / "report.json"
         system_errors = Path(tmp_out_dir) / "system_errors.json"
 
         result = {
-                "report": json.load(open(report)),
-                "system_errors": json.load(open(system_errors)),
-                }
+            "report": json.load(open(report)),
+            "system_errors": json.load(open(system_errors)),
+        }
 
     if out_file is not None:
         with open(out_file, "w") as f:
@@ -84,6 +91,7 @@ def validate_many(gtfs_files, out_file=None, verbose=False):
 
 def _get_paths_from_status(f, bucket_path):
     from csv import DictReader
+
     tmpl_path = "{bucket_path}/{itp_id}_{url_number}"
 
     rows = list(DictReader(f))
@@ -100,10 +108,14 @@ def _get_paths_from_status(f, bucket_path):
 
 @arg("bucket_paths", nargs="+")
 def validate_gcs_bucket(
-        project_id, token, bucket_paths,
-        feed_name="us-na",
-        recursive=False, out_file=None, verbose=False
-        ):
+    project_id,
+    token,
+    bucket_paths,
+    feed_name="us-na",
+    recursive=False,
+    out_file=None,
+    verbose=False,
+):
     """
     Arguments:
         project_id: name of google cloud project
@@ -121,8 +133,9 @@ def validate_gcs_bucket(
 
         It will look for subfolders named {itp_id}/{url_number}.
     """
-    import gcsfs
     import shutil
+
+    import gcsfs
 
     fs = gcsfs.GCSFileSystem(project_id, token=token)
 
@@ -147,8 +160,8 @@ def validate_gcs_bucket(
 
             result = {
                 "version": os.environ["GTFS_VALIDATOR_VERSION"],
-                "data": validate(path_zip, verbose=verbose, feed_name=feed_name)
-                }
+                "data": validate(path_zip, verbose=verbose, feed_name=feed_name),
+            }
 
         results.append(result)
 
@@ -160,10 +173,7 @@ def validate_gcs_bucket(
                 print("Saving to path: %s" % bucket_out)
 
             # fs.pipe expects contents to be byte encoded
-            retry_on_fail(
-                lambda: fs.pipe(bucket_out, json.dumps(result).encode()),
-                2
-            )
+            retry_on_fail(lambda: fs.pipe(bucket_out, json.dumps(result).encode()), 2)
 
     # if not saving to disk, return results
     if out_file is None:
@@ -172,11 +182,10 @@ def validate_gcs_bucket(
 
 # Cli ----
 
+
 def main():
     # TODO: make into simple CLI
-    result = argh.dispatch_commands([
-        validate, validate_many, validate_gcs_bucket
-        ])
+    result = argh.dispatch_commands([validate, validate_many, validate_gcs_bucket])
 
     if result is not None:
         print(json.dumps(result))

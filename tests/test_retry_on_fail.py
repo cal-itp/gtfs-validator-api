@@ -14,6 +14,7 @@ def test_retry_on_fail():
 
     retry_on_fail(lambda: raises(), 1)
 
+
 def test_retry_on_fail_stops():
     n = 0
 
@@ -27,4 +28,3 @@ def test_retry_on_fail_stops():
 
     with pytest.raises(Exception):
         retry_on_fail(lambda: raises(), 1)
-
