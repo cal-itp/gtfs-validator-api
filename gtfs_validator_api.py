@@ -2,12 +2,16 @@ __version__ = "0.0.6"
 
 import json
 import os
+import shutil
 import subprocess
 import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import argh
+import backoff
+import gcsfs
+from aiohttp.client_exceptions import ClientOSError, ClientResponseError
 from argh import arg
 
 try:
@@ -29,6 +33,11 @@ def retry_on_fail(f, max_retries=2):
                 warnings.warn("Function failed, starting retry: %s" % n_retries)
             else:
                 raise e
+
+
+@backoff.on_exception(backoff.expo, (ClientResponseError, ClientOSError), max_tries=2)
+def get_with_retry(fs: gcsfs.GCSFileSystem, *args, **kwargs):
+    return fs.get(*args, **kwargs)
 
 
 # API ----
@@ -133,10 +142,6 @@ def validate_gcs_bucket(
 
         It will look for subfolders named {itp_id}/{url_number}.
     """
-    import shutil
-
-    import gcsfs
-
     fs = gcsfs.GCSFileSystem(project_id, token=token)
 
     if recursive:
@@ -155,7 +160,7 @@ def validate_gcs_bucket(
             path_raw = tmp_dir + "/gtfs"
             path_zip = tmp_dir + "/gtfs.zip"
 
-            fs.get(path, path_raw, recursive=True)
+            get_with_retry(path, path_raw, recursive=True)
             shutil.make_archive(path_raw, "zip", path_raw)
 
             result = {
