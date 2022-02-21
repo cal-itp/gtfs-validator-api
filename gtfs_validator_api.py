@@ -13,10 +13,12 @@ import gcsfs
 from aiohttp.client_exceptions import ClientOSError, ClientResponseError
 from argh import arg
 
+GTFS_VALIDATOR_JAR_ENV = "GTFS_VALIDATOR_JAR"
+
 try:
-    JAR_PATH = os.environ.get("GTFS_VALIDATOR_JAR")
+    JAR_PATH = os.environ[GTFS_VALIDATOR_JAR_ENV]
 except KeyError:
-    raise Exception("Must set the environment variable GTFS_VALIDATOR_JAR")
+    raise Exception(f"Must set the environment variable {GTFS_VALIDATOR_JAR_ENV}")
 
 
 @backoff.on_exception(backoff.expo, (ClientResponseError, ClientOSError), max_tries=2)
@@ -33,7 +35,7 @@ def pipe_with_retry(fs: gcsfs.GCSFileSystem, *args, **kwargs):
 
 
 @arg("gtfs_file", help="a zipped gtfs file", type=str)
-def validate(gtfs_file, out_file=None, verbose=False, feed_name="us-na"):
+def validate(gtfs_file: str, out_file=None, verbose=False, feed_name="us-na"):
     if not isinstance(gtfs_file, str):
         raise NotImplementedError("gtfs_file must be a string")
 
@@ -149,7 +151,7 @@ def validate_gcs_bucket(
             path_raw = tmp_dir + "/gtfs"
             path_zip = tmp_dir + "/gtfs.zip"
 
-            get_with_retry(path, path_raw, recursive=True)
+            get_with_retry(fs, path, path_raw, recursive=True)
             shutil.make_archive(path_raw, "zip", path_raw)
 
             result = {
@@ -167,7 +169,7 @@ def validate_gcs_bucket(
                 print("Saving to path: %s" % bucket_out)
 
             # fs.pipe expects contents to be byte encoded
-            pipe_with_retry(bucket_out, json.dumps(result).encode())
+            pipe_with_retry(fs, bucket_out, json.dumps(result).encode())
 
     # if not saving to disk, return results
     if out_file is None:
