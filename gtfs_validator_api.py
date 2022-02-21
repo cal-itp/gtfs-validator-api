@@ -4,7 +4,6 @@ import json
 import os
 import shutil
 import subprocess
-import warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -20,24 +19,14 @@ except KeyError:
     raise Exception("Must set the environment variable GTFS_VALIDATOR_JAR")
 
 
-# Utility funcs ----
-
-
-def retry_on_fail(f, max_retries=2):
-    for n_retries in range(max_retries + 1):
-        try:
-            f()
-        except Exception as e:
-            if n_retries < max_retries:
-                n_retries += 1
-                warnings.warn("Function failed, starting retry: %s" % n_retries)
-            else:
-                raise e
-
-
 @backoff.on_exception(backoff.expo, (ClientResponseError, ClientOSError), max_tries=2)
 def get_with_retry(fs: gcsfs.GCSFileSystem, *args, **kwargs):
     return fs.get(*args, **kwargs)
+
+
+@backoff.on_exception(backoff.expo, (ClientResponseError, ClientOSError), max_tries=2)
+def pipe_with_retry(fs: gcsfs.GCSFileSystem, *args, **kwargs):
+    return fs.pipe(*args, **kwargs)
 
 
 # API ----
@@ -178,7 +167,7 @@ def validate_gcs_bucket(
                 print("Saving to path: %s" % bucket_out)
 
             # fs.pipe expects contents to be byte encoded
-            retry_on_fail(lambda: fs.pipe(bucket_out, json.dumps(result).encode()), 2)
+            pipe_with_retry(bucket_out, json.dumps(result).encode())
 
     # if not saving to disk, return results
     if out_file is None:
