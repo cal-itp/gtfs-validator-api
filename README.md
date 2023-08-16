@@ -1,3 +1,5 @@
+# DEPRECATED: this repo/image are replaced by https://github.com/cal-itp/data-infra/tree/main/jobs/gtfs-schedule-validator
+
 # gtfs-validator-api
 
 This python package is a thin wrapper around MobilityData/gtfs-validator.
